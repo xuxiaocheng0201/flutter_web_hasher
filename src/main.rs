@@ -13,7 +13,6 @@ fn main() -> anyhow::Result<()> {
         &[Path::new(""), Path::new("assets")],
         &manifest,
         &[],
-        |index| format!("@@@FWH#{index}#FWH@@@"),
         |context| if context.ends_with("flutter_service_worker.js") {
             vec![context.to_string()]
         } else {

@@ -51,29 +51,19 @@ pub fn rename_files(
 fn replace_content(
     content: &str,
     replacer: &[(&str, &str)],
-    replace_middle: impl Fn(usize) -> String,
     replace_wrapper: impl Fn(&str) -> Vec<String>,
 ) -> String {
-    let mut content = content.to_string();
-    let mut helper = Vec::with_capacity(replacer.len());
-    let mut index = 0;
+    let mut patterns = Vec::with_capacity(replacer.len());
+    let mut replacements = Vec::with_capacity(replacer.len());
     for &(old, new) in replacer {
         let olds = replace_wrapper(old);
         let news = replace_wrapper(new);
         debug_assert_eq!(olds.len(), news.len());
-        for (old, new) in olds.into_iter().zip(news.into_iter()) {
-            let middle = replace_middle(index);
-            helper.push((old, middle, new));
-            index += 1;
-        }
+        for old in olds { patterns.push(old); }
+        for new in news { replacements.push(new); }
     }
-    for (old, middle, _new) in &helper {
-        content = content.replace(old, middle);
-    }
-    for (_old, middle, new) in &helper {
-        content = content.replace(middle, new);
-    }
-    content
+    let ac = aho_corasick::AhoCorasick::new(patterns).unwrap();
+    ac.replace_all(content, &replacements)
 }
 
 pub fn update_references(
@@ -81,7 +71,6 @@ pub fn update_references(
     replace_base: &[&Path],
     manifest: &HashMap<PathBuf, PathBuf>,
     skip_list: &[&Path],
-    replace_middle: impl Fn(usize) -> String + Copy,
     replace_wrapper: impl Fn(&str) -> Vec<String> + Copy,
 ) -> Result<()> {
     let directory = directory.as_ref();
@@ -108,7 +97,7 @@ pub fn update_references(
         if skip_list.contains(&path.strip_prefix(directory)?) { continue; }
 
         if let Ok(content) = std::fs::read_to_string(path) {
-            let new_content = replace_content(&content, &converter, replace_middle, replace_wrapper);
+            let new_content = replace_content(&content, &converter, replace_wrapper);
             if content != new_content {
                 std::fs::write(path, new_content)?;
             }
