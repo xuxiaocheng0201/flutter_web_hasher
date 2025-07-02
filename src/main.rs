@@ -1,9 +1,10 @@
 use anyhow::{anyhow, Result};
+use clap::Parser;
 use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
-fn rename_files(
+pub fn rename_files(
     directory: impl AsRef<Path>,
     skip_list: &[&Path]
 ) -> Result<HashMap<PathBuf, PathBuf>> {
@@ -41,7 +42,7 @@ fn rename_files(
     Ok(map)
 }
 
-fn update_references(
+pub fn update_references(
     directory: impl AsRef<Path>,
     replace_base: &[&Path],
     manifest: &HashMap<PathBuf, PathBuf>,
@@ -88,24 +89,35 @@ fn update_references(
     Ok(())
 }
 
+#[derive(clap::Parser)]
+#[command(version, about, long_about = None)]
+struct Cli {
+    /// Target directory.
+    #[arg(short, long, default_value = "./build/web")]
+    directory: PathBuf,
+
+    /// Skip hash files. Stripped from `directory`. Not start with '/'.
+    #[arg(short, long)]
+    skip: Vec<PathBuf>,
+}
+
 fn main() -> Result<()> {
+    let cli = Cli::parse();
     let manifest = rename_files(
-        "build/web",
-        &[
-            Path::new("index.html"),
-            Path::new("404.html"),
-        ],
+        &cli.directory,
+        &cli.skip.iter().map(|p| p.as_path()).collect::<Vec<_>>(),
     )?;
     update_references(
-        "build/web",
+        &cli.directory,
         &[Path::new(""), Path::new("assets")],
         &manifest,
         &[],
-        |context| if context.ends_with("flutter_service_worker.js") {
-            vec![context.to_string()]
+        |content| if content.ends_with("flutter_service_worker.js") {
+            vec![content.to_string()]
         } else {
-            vec![format!("\"{context}\"")]
+            vec![format!("\"{content}\"")]
         },
     )?;
+    println!("Successfully hashed {} files.", manifest.len());
     Ok(())
 }

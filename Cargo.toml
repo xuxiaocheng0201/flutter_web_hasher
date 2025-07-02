@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["xuxiaocheng <2762267080@qq.com>"]
 edition = "2024"
 rust-version = "1.85.0"
-description = "Add hash suffixes to flutter web products. Resolve browser caching problem."
+description = "Add hash suffixes to flutter web products to resolve browser caching problem."
 readme = "README.md"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/xuxiaocheng0201/flutter_web_hasher"
@@ -14,7 +14,12 @@ keywords = ["flutter", "flutter-web", "web", "cache", "optimize"]
 
 [dependencies]
 anyhow = "^1.0"
+## get files
 walkdir = "^2.5"
+## hash file
 sha2 = "~0.10"
 hex = "~0.4"
+## replace content
 aho-corasick = "^1.1"
+## command line
+clap = { version = "^4.5", features = ["derive"] }
