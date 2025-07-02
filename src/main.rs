@@ -3,7 +3,10 @@ use std::path::Path;
 fn main() -> anyhow::Result<()> {
     let manifest = flutter_web_hasher::rename_files(
         "build/web",
-        &[Path::new("index.html")]
+        &[
+            Path::new("index.html"),
+            Path::new("404.html"),
+        ],
     )?;
     flutter_web_hasher::update_references(
         "build/web",
