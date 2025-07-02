@@ -1,7 +1,16 @@
 [package]
 name = "flutter_web_hasher"
 version = "0.1.0"
+authors = ["xuxiaocheng <2762267080@qq.com>"]
 edition = "2024"
+rust-version = "1.85.0"
+description = "Add hash suffixes to flutter web products. Resolve browser caching problem."
+readme = "README.md"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/xuxiaocheng0201/flutter_web_hasher"
+documentation = "https://docs.rs/flutter_web_hasher"
+categories = ["command-line-utilities"]
+keywords = ["flutter", "flutter-web", "web", "cache", "optimize"]
 
 [dependencies]
 anyhow = "^1.0"
