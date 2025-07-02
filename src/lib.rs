@@ -48,12 +48,24 @@ pub fn rename_files(
     Ok(map)
 }
 
-fn replace_content(content: &str, replacer: &[(&str, &str)], replace_middle: impl Fn(usize) -> String) -> String {
+fn replace_content(
+    content: &str,
+    replacer: &[(&str, &str)],
+    replace_middle: impl Fn(usize) -> String,
+    replace_wrapper: impl Fn(&str) -> Vec<String>,
+) -> String {
     let mut content = content.to_string();
     let mut helper = Vec::with_capacity(replacer.len());
-    for (index, &(old, new)) in replacer.into_iter().enumerate() {
-        let middle = replace_middle(index);
-        helper.push((old, middle, new));
+    let mut index = 0;
+    for &(old, new) in replacer {
+        let olds = replace_wrapper(old);
+        let news = replace_wrapper(new);
+        debug_assert_eq!(olds.len(), news.len());
+        for (old, new) in olds.into_iter().zip(news.into_iter()) {
+            let middle = replace_middle(index);
+            helper.push((old, middle, new));
+            index += 1;
+        }
     }
     for (old, middle, _new) in &helper {
         content = content.replace(old, middle);
@@ -70,6 +82,7 @@ pub fn update_references(
     manifest: &HashMap<PathBuf, PathBuf>,
     skip_list: &[&Path],
     replace_middle: impl Fn(usize) -> String + Copy,
+    replace_wrapper: impl Fn(&str) -> Vec<String> + Copy,
 ) -> Result<()> {
     let directory = directory.as_ref();
     let replace_base = if replace_base.is_empty() {
@@ -95,7 +108,7 @@ pub fn update_references(
         if skip_list.contains(&path.strip_prefix(directory)?) { continue; }
 
         if let Ok(content) = std::fs::read_to_string(path) {
-            let new_content = replace_content(&content, &converter, replace_middle);
+            let new_content = replace_content(&content, &converter, replace_middle, replace_wrapper);
             if content != new_content {
                 std::fs::write(path, new_content)?;
             }
