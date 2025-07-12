@@ -2,6 +2,7 @@ use anyhow::{anyhow, Result};
 use clap::Parser;
 use std::collections::HashMap;
 use std::ffi::OsStr;
+use std::num::NonZeroU8;
 use std::path::{Path, PathBuf};
 
 pub fn rename_files(
@@ -96,28 +97,34 @@ struct Cli {
     #[arg(short, long, default_value = "./build/web")]
     directory: PathBuf,
 
-    /// Skip hash files. Stripped from `directory`. Not start with '/'.
+    /// Skip hash files. Stripped from `directory`. Not start with '/'. E.g., `index.html`.
     #[arg(short, long)]
     skip: Vec<PathBuf>,
+
+    /// Hash round. Executing twice can achieve cascading updates.
+    #[arg(long, default_value = "2")]
+    round: NonZeroU8,
 }
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
-    let manifest = rename_files(
-        &cli.directory,
-        &cli.skip.iter().map(|p| p.as_path()).collect::<Vec<_>>(),
-    )?;
-    update_references(
-        &cli.directory,
-        &[Path::new(""), Path::new("assets")],
-        &manifest,
-        &[],
-        |content| if content.ends_with("flutter_service_worker.js") {
-            vec![content.to_string()]
-        } else {
-            vec![format!("\"{content}\"")]
-        },
-    )?;
-    println!("Successfully hashed {} files.", manifest.len());
+    for round in 0..cli.round.get() {
+        let manifest = rename_files(
+            &cli.directory,
+            &cli.skip.iter().map(|p| p.as_path()).collect::<Vec<_>>(),
+        )?;
+        update_references(
+            &cli.directory,
+            &[Path::new(""), Path::new("assets")],
+            &manifest,
+            &[],
+            |content| if content.ends_with("flutter_service_worker.js") {
+                vec![content.to_string()]
+            } else {
+                vec![format!("\"{content}\"")]
+            },
+        )?;
+        println!("Successfully hashed {} files in round {}.", manifest.len(), round as u16 + 1);
+    }
     Ok(())
 }

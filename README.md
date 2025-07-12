@@ -32,7 +32,8 @@ Usage: flutter_web_hasher [OPTIONS]
 
 Options:
   -d, --directory <DIRECTORY>  Target directory [default: ./build/web]
-  -s, --skip <SKIP>            Skip hash files. Stripped from `directory`. Not start with '/'
+  -s, --skip <SKIP>            Skip hash files. Stripped from `directory`. Not start with '/'. E.g., `index.html`
+      --round <ROUND>          Hash round. Executing twice can achieve cascading updates [default: 2]
   -h, --help                   Print help
   -V, --version                Print version
 ```
